@@ -1,5 +1,6 @@
 #include "Phsensor.h"
 #include <Arduino.h>
+#include <DFRobot_PH.h>
 
 Phsensor::Phsensor(int pin) {
   _pin = pin;
@@ -7,20 +8,16 @@ Phsensor::Phsensor(int pin) {
 
 Phsensor::~Phsensor() {}
 
-float Phsensor::Meet() {
-  // Lees de analoge waarde van de sensor
-  int sensorValue = analogRead(_pin);
+float Phsensor::Meet(float temperatuur) {
+  DFRobot_PH ph;
+  ph.begin();
 
-  // Converteer de analoge waarde naar millivolts (0-1023 naar 0-5000mV)
-  float voltage = sensorValue * (5000.0 / 1023.0);
+  float voltagePH = analogRead(_pin) / 1024.0 * 5000;  // Lees de spanning van de pH-sensor
+  float phValue = ph.readPH(voltagePH, temperatuur);              // Zet spanning om naar pH met temperatuur van 25°C
 
-  // Converteer de spanning naar temperatuur in Celsius
-  float  temperature = voltage / 10.0;
+  // Print pH-waarde naar seriële monitor
+  Serial.print("pH: ");
+  Serial.println(phValue, 2);  // Druk de pH-waarde af met twee decimalen
 
-  // Print de temperatuur naar de seriële monitor
-  Serial.print("Temperatuur: ");
-  Serial.print(temperature);
-  Serial.println(" °C");
-
-  return temperature;
+  return phValue;
 }

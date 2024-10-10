@@ -8,19 +8,15 @@ Troebelheidsensor::Troebelheidsensor(int pin) {
 Troebelheidsensor::~Troebelheidsensor() {}
 
 float Troebelheidsensor::Meet() {
-  // Lees de analoge waarde van de sensor
-  int sensorValue = analogRead(_pin);
+  int sensorValue = analogRead(_pin);// read the input on analog pin 0:
+  float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
+  Serial.println(voltage); // print out the value you read:
 
-  // Converteer de analoge waarde naar millivolts (0-1023 naar 0-5000mV)
-  float voltage = sensorValue * (5000.0 / 1023.0);
-
-  // Converteer de spanning naar temperatuur in Celsius
-  float  temperature = voltage / 10.0;
 
   // Print de temperatuur naar de seriële monitor
-  Serial.print("Temperatuur: ");
-  Serial.print(temperature);
-  Serial.println(" °C");
+  Serial.print("Troebelheid: ");
+  Serial.print(voltage);
+  Serial.println(" NTU");
 
   return temperature;
 }

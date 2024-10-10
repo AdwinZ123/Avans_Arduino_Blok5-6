@@ -9,7 +9,7 @@ private:
 		Elektrischegeleidingssensor(int);
 		~Elektrischegeleidingssensor();
 		
-    float Meet();
+    float Meet(float temperatuur);
 };
 
 #endif

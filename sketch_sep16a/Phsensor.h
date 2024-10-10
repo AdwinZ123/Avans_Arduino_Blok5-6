@@ -9,7 +9,7 @@ private:
 		Phsensor(int);
 		~Phsensor();
 		
-    float Meet();
+    float Meet(float temperatuur);
 };
 
 #endif

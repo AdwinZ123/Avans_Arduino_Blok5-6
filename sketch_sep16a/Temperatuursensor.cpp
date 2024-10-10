@@ -15,7 +15,7 @@ float Temperatuursensor::Meet() {
   float voltage = sensorValue * (5000.0 / 1023.0);
 
   // Converteer de spanning naar temperatuur in Celsius
-  float  temperature = voltage / 10.0;
+  float temperature = voltage / 10.0;
 
   // Print de temperatuur naar de seriële monitor
   Serial.print("Temperatuur: ");

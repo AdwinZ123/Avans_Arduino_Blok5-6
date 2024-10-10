@@ -158,11 +158,11 @@ void do_send(osjob_t* j) {
   } else {
     // Prepare upstream data transmission at the next possible time.
 
-    float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet();
-    float troebelheidWaarde = troebelheidsensor.Meet();
-    float phWaarde = phsensor.Meet();
-    float zuurstofWaarde = zuurstofsensor.Meet();
     float temperatuurWaarde = temperatuursensor.Meet();
+    float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet(temperatuurWaarde);
+    float troebelheidWaarde = troebelheidsensor.Meet();
+    float phWaarde = phsensor.Meet(temperatuurWaarde);
+    int16_t zuurstofWaarde = zuurstofsensor.Meet(temperatuurWaarde);
 
     LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
     Serial.println(F("Packet queued"));
@@ -174,11 +174,11 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("Starting"));
 
-  pinMode(ELEKTRISCHEGELEIDINGSSENSORPIN, INPUT);
-  pinMode(TEMPERATUURSENSORPIN, INPUT);
-  pinMode(ZUURSTOFSENSORPIN, INPUT);
-  pinMode(TROEBELHEIDSENSORPIN, INPUT);
-  pinMode(PHSENSORPIN, INPUT);
+  // pinMode(ELEKTRISCHEGELEIDINGSSENSORPIN, INPUT);
+  // pinMode(TEMPERATUURSENSORPIN, INPUT);
+  // pinMode(ZUURSTOFSENSORPIN, INPUT);
+  // pinMode(TROEBELHEIDSENSORPIN, INPUT);
+  // pinMode(PHSENSORPIN, INPUT);
 
 #ifdef VCC_ENABLE
   // For Pinoccio Scout boards
