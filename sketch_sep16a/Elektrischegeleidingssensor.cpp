@@ -16,13 +16,13 @@ float Elektrischegeleidingssensor::Meet(float temperatuur) {
   gravityTds.setAdcRange(1024);  //1024 for 10bit ADC;4096 for 12bit ADC
   gravityTds.begin();            //initialization
 
-  tdsValue = 0;
+  float tdsValue = 0;
 
   gravityTds.setTemperature(temperatuur);  // set the temperature and execute temperature compensation
   gravityTds.update();                     //sample and calculate
   tdsValue = gravityTds.getTdsValue();     // then get the value
-  Serial.print(tdsValue, 0);
-  Serial.println("ppm");
+  Serial.println(tdsValue, 0);
+  // Serial.println("ppm");
 
   return tdsValue;
 }

@@ -9,7 +9,7 @@ private:
 		Zuurstofsensor(int);
 		~Zuurstofsensor();
 		
-    int16_t Meet(float temperatuur);
+    int Meet(float temperatuur);
 };
 
 #endif

@@ -44,7 +44,7 @@ int16_t readDO(uint32_t voltage_mv, uint8_t temperature_c)
 #endif
 }
 
-int16_t Zuurstofsensor::Meet(float temperatuur) {
+int Zuurstofsensor::Meet(float temperatuur) {
   Temperaturet = (uint8_t)temperatuur;
   ADC_Raw = analogRead(_pin);
   ADC_Voltage = uint32_t(VREF) * ADC_Raw / ADC_RES;
