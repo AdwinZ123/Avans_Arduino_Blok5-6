@@ -11,6 +11,7 @@ Troebelheidsensor::~Troebelheidsensor() {}
 
 float Troebelheidsensor::Meet()
 {
+  Serial.println("Troebelheidsensor");
   int sensorValue = analogRead(_pin);                                        // read the input on analog pin 0:
   double voltage = sensorValue * (5.0 / 1024.0);                             // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
   double ntu = round(-1120.4 * pow(voltage, 2) + 5742.3 * voltage - 4353.8); // convert measured voltage to corresponding NTU value

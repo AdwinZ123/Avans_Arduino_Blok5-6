@@ -12,6 +12,7 @@ Phsensor::~Phsensor() {}
 
 float Phsensor::Meet(float temperatuur)
 {
+  Serial.println("Phsensor");
   DFRobot_PH ph;
   ph.begin();
 
