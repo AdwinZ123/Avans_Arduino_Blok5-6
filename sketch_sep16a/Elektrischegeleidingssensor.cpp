@@ -22,7 +22,7 @@ float Elektrischegeleidingssensor::Meet(float temperatuur) {
   gravityTds.update();                     //sample and calculate
   tdsValue = gravityTds.getTdsValue();     // then get the value
   Serial.println(tdsValue, 0);
-  // Serial.println("ppm");
+  Serial.println("ppm");
 
   return tdsValue;
 }

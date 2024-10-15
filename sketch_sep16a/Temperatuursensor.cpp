@@ -18,9 +18,9 @@ float Temperatuursensor::Meet() {
   float temperature = voltage / 10.0;
 
   // Print de temperatuur naar de seriële monitor
-  // Serial.print("Temperatuur: ");
+  Serial.print("Temperatuur: ");
   Serial.print(temperature);
-  // Serial.println(" °C");
+  Serial.println(" °C");
 
   return temperature;
 }
