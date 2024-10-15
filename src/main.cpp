@@ -43,7 +43,7 @@
 #include "Temperatuursensor.h"
 
 #define TEMPERATUURSENSORPIN 32
-#define ZUURSTOFSENSORPIN 33
+#define ZUURSTOFSENSORPIN 37
 #define PHSENSORPIN 34
 #define TROEBELHEIDSENSORPIN 35
 #define ELEKTRISCHEGELEIDINGSSENSORPIN 36
@@ -51,8 +51,8 @@
 Elektrischegeleidingssensor elektrischegeleidingssensor(ELEKTRISCHEGELEIDINGSSENSORPIN);
 Troebelheidsensor troebelheidsensor(TROEBELHEIDSENSORPIN);
 Phsensor phsensor(PHSENSORPIN);
-Zuurstofsensor zuurstofsensor(ZUURSTOFSENSORPIN);
-// Temperatuursensor temperatuursensor(TEMPERATUURSENSORPIN);
+// Zuurstofsensor zuurstofsensor(ZUURSTOFSENSORPIN);
+Temperatuursensor temperatuursensor(TEMPERATUURSENSORPIN);
 
 #define BUILDINLED 25
 
@@ -98,6 +98,7 @@ void printHex2(unsigned v)
 
 void onEvent(ev_t ev)
 {
+    Serial.println("onEvent");
     Serial.print(os_getTime());
     Serial.print(": ");
     switch (ev)
@@ -222,8 +223,65 @@ void onEvent(ev_t ev)
     }
 }
 
+int16_t readDO(uint32_t voltage_mv, uint8_t temperature_c)
+{
+    // Single-point calibration Mode=0
+    // Two-point calibration Mode=1
+    bool TWO_POINT_CALIBRATION = 0;
+
+    // Single point calibration needs to be filled CAL1_V and CAL1_T
+    int CAL1_V = 1600; // mv
+    int CAL1_T = 25;   // ℃
+
+    // Two-point calibration needs to be filled CAL2_V and CAL2_T
+    // CAL1 High temperature point, CAL2 Low temperature point
+    int CAL2_V = 1300; // mv
+    int CAL2_T = 15;   // ℃
+
+    uint16_t DO_Table[41] = {
+        14460, 14220, 13820, 13440, 13090, 12740, 12420, 12110, 11810, 11530,
+        11260, 11010, 10770, 10530, 10300, 10080, 9860, 9660, 9460, 9270,
+        9080, 8900, 8730, 8570, 8410, 8250, 8110, 7960, 7820, 7690,
+        7560, 7430, 7300, 7180, 7070, 6950, 6840, 6730, 6630, 6530, 6410};
+
+#if TWO_POINT_CALIBRATION == 0
+    uint16_t V_saturation = (uint32_t)CAL1_V + (uint32_t)35 * temperature_c - (uint32_t)CAL1_T * 35;
+    return (voltage_mv * DO_Table[temperature_c] / V_saturation);
+#else
+    uint16_t V_saturation = (int16_t)((int8_t)temperature_c - CAL2_T) * ((uint16_t)CAL1_V - CAL2_V) / ((uint8_t)CAL1_T - CAL2_T) + CAL2_V;
+    return (voltage_mv * DO_Table[temperature_c] / V_saturation);
+#endif
+}
+
+int meet()
+{
+    int DO_PIN = 33;
+    int VREF = 5000;    // VREF (mv)
+    int ADC_RES = 1024; // ADC Resolution
+    int READ_TEMP = 25; // Current water temperature ℃, Or temperature sensor function
+
+    uint8_t Temperaturet = (uint8_t)READ_TEMP;
+    uint16_t ADC_Raw = analogRead(DO_PIN);
+    uint16_t ADC_Voltage = (uint32_t)VREF * ADC_Raw / ADC_RES;
+    uint16_t DO = readDO(ADC_Voltage, Temperaturet);
+
+    // Optimaliseer seriële output en voeg vertraging toe
+    Serial.print("Temperaturet:\t");
+    Serial.print(Temperaturet);
+    Serial.print("\tADC RAW:\t");
+    Serial.print(ADC_Raw);
+    Serial.print("\tADC Voltage:\t");
+    Serial.print(ADC_Voltage);
+    Serial.print("\tDO:\t");
+    Serial.println(DO);
+
+    return DO;
+}
+
 void do_send(osjob_t *j)
 {
+    Serial.println("do_send");
+
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND)
     {
@@ -232,11 +290,12 @@ void do_send(osjob_t *j)
     else
     {
         // PUT HERE YOUR CODE TO READ THE SENSORS AND CONSTRUCT THE TTS PAYLOAD
-        float temperatuurWaarde = 25; // temperatuursensor.Meet();
-        float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet(temperatuurWaarde);
-        float troebelheidWaarde = troebelheidsensor.Meet();
-        float phWaarde = phsensor.Meet(temperatuurWaarde);
-        int zuurstofWaarde = zuurstofsensor.Meet(temperatuurWaarde);
+        // float temperatuurWaarde = temperatuursensor.Meet();
+        // float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet(temperatuurWaarde);
+        // float troebelheidWaarde = troebelheidsensor.Meet();
+        // float phWaarde = phsensor.Meet(temperatuurWaarde);
+        int zuurstofWaarde = meet(); // zuurstofsensor.Meet(temperatuurWaarde);
+        Serial.println(zuurstofWaarde);
 
         // Print the payload to the console
         Serial.print("Payload: ");

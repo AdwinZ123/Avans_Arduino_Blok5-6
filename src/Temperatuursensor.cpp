@@ -1,13 +1,16 @@
 #include "Temperatuursensor.h"
 #include <Arduino.h>
 
-Temperatuursensor::Temperatuursensor(int pin) {
+Temperatuursensor::Temperatuursensor(int pin)
+{
   _pin = pin;
 }
 
 Temperatuursensor::~Temperatuursensor() {}
 
-float Temperatuursensor::Meet() {
+float Temperatuursensor::Meet()
+{
+  Serial.println("Temperatuursensor");
   // Lees de analoge waarde van de sensor
   int sensorValue = analogRead(_pin);
 
