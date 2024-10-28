@@ -43,7 +43,7 @@
 #include "Temperatuursensor.h"
 
 #define TEMPERATUURSENSORPIN 32
-#define ZUURSTOFSENSORPIN 33
+#define ZUURSTOFSENSORPIN 37
 #define PHSENSORPIN 34
 #define TROEBELHEIDSENSORPIN 35
 #define ELEKTRISCHEGELEIDINGSSENSORPIN 36
@@ -52,7 +52,7 @@ Elektrischegeleidingssensor elektrischegeleidingssensor(ELEKTRISCHEGELEIDINGSSEN
 Troebelheidsensor troebelheidsensor(TROEBELHEIDSENSORPIN);
 Phsensor phsensor(PHSENSORPIN);
 Zuurstofsensor zuurstofsensor(ZUURSTOFSENSORPIN);
-// Temperatuursensor temperatuursensor(TEMPERATUURSENSORPIN);
+Temperatuursensor temperatuursensor(TEMPERATUURSENSORPIN);
 
 #define BUILDINLED 25
 
@@ -98,6 +98,7 @@ void printHex2(unsigned v)
 
 void onEvent(ev_t ev)
 {
+    Serial.println("onEvent");
     Serial.print(os_getTime());
     Serial.print(": ");
     switch (ev)
@@ -224,6 +225,8 @@ void onEvent(ev_t ev)
 
 void do_send(osjob_t *j)
 {
+    Serial.println("do_send");
+
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND)
     {
@@ -232,11 +235,12 @@ void do_send(osjob_t *j)
     else
     {
         // PUT HERE YOUR CODE TO READ THE SENSORS AND CONSTRUCT THE TTS PAYLOAD
-        float temperatuurWaarde = 25; // temperatuursensor.Meet();
+        float temperatuurWaarde = temperatuursensor.Meet();
         float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet(temperatuurWaarde);
         float troebelheidWaarde = troebelheidsensor.Meet();
         float phWaarde = phsensor.Meet(temperatuurWaarde);
-        int zuurstofWaarde = zuurstofsensor.Meet(temperatuurWaarde);
+        float zuurstofWaarde = zuurstofsensor.Meet(temperatuurWaarde); // meet();
+        Serial.println(zuurstofWaarde);
 
         // Print the payload to the console
         Serial.print("Payload: ");
@@ -257,6 +261,7 @@ void do_send(osjob_t *j)
 
 void setup()
 {
+    Serial.println("Setup begin");
     Serial.begin(9600);
     Serial.println(F("Starting"));
 
@@ -274,6 +279,8 @@ void setup()
 
     // Start job (sending automatically starts OTAA too)
     do_send(&sendjob);
+
+    Serial.println("Setup eind");
 }
 
 void loop()

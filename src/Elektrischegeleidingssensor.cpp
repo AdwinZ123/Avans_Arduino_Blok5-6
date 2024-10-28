@@ -12,6 +12,8 @@ Elektrischegeleidingssensor::~Elektrischegeleidingssensor() {}
 
 float Elektrischegeleidingssensor::Meet(float temperatuur)
 {
+  Serial.println("Elektrischegeleidingssensor");
+
   CQRobotTDS tds(_pin);
 
   float tdsValue = tds.update(temperatuur);
