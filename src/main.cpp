@@ -36,6 +36,8 @@
 #include <hal/hal.h>
 #include <SPI.h>
 
+#include "CQRobotTDS.h"
+
 #include "Elektrischegeleidingssensor.h"
 #include "Troebelheidsensor.h"
 #include "Phsensor.h"
