@@ -3,9 +3,13 @@
 #include <DFRobot_PH.h>
 #include <EEPROM.h>
 
+float voltage, phValue = 25;
+DFRobot_PH ph;
+
 Phsensor::Phsensor(int pin)
 {
   _pin = pin;
+  ph.begin();
 }
 
 Phsensor::~Phsensor() {}
@@ -13,17 +17,14 @@ Phsensor::~Phsensor() {}
 float Phsensor::Meet(float temperatuur)
 {
   Serial.println("Phsensor");
-  DFRobot_PH ph;
-  ph.begin();
-
-  float voltage = analogRead(_pin) / 1024.0 * 5000; // read the voltage
-  float phValue = ph.readPH(voltage, temperatuur);  // convert voltage to pH with temperature compensation
-  // Serial.print("temperature:");
-  // Serial.print(temperatuur, 1);
+  voltage = analogRead(_pin)/4096.0*3300; // read the voltage
+  phValue = ph.readPH(voltage, temperatuur);  // convert voltage to pH with temperature compensation
+  Serial.print("temperature:");
+  Serial.print(temperatuur, 1);
   Serial.print("^C  pH:");
   Serial.println(phValue, 2);
 
-  ph.calibration(voltage, temperatuur); // calibration process by Serail CMD
+  ph.calibration(voltage, temperatuur);
 
   return phValue;
 }
