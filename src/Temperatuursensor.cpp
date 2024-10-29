@@ -20,7 +20,7 @@ float Temperatuursensor::Meet()
 
   // Lees de temperatuur
   sensors.requestTemperatures();
-  temperature = sensors.getTempCByIndex(_pin); // Verkrijg de temperatuur van de eerste sensor
+  temperature = sensors.getTempCByIndex(0); // Verkrijg de temperatuur van de eerste sensor
 
   Serial.print("Temperatuur meting: ");
   Serial.print(temperature);

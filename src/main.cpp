@@ -44,7 +44,7 @@
 #include "Zuurstofsensor.h"
 #include "Temperatuursensor.h"
 
-#define TEMPERATUURSENSORPIN 32
+#define TEMPERATUURSENSORPIN 13
 #define ZUURSTOFSENSORPIN 37
 #define PHSENSORPIN 34
 #define TROEBELHEIDSENSORPIN 35
@@ -270,25 +270,27 @@ void setup()
     Serial.begin(9600);
     Serial.println(F("Starting"));
 
-#ifdef VCC_ENABLE
-    // For Pinoccio Scout boards
-    pinMode(VCC_ENABLE, OUTPUT);
-    digitalWrite(VCC_ENABLE, HIGH);
-    delay(1000);
-#endif
+// #ifdef VCC_ENABLE
+//     // For Pinoccio Scout boards
+//     pinMode(VCC_ENABLE, OUTPUT);
+//     digitalWrite(VCC_ENABLE, HIGH);
+//     delay(1000);
+// #endif
 
-    // LMIC init
-    os_init();
-    // Reset the MAC state. Session and pending data transfers will be discarded.
-    LMIC_reset();
+//     // LMIC init
+//     os_init();
+//     // Reset the MAC state. Session and pending data transfers will be discarded.
+//     LMIC_reset();
 
-    // Start job (sending automatically starts OTAA too)
-    do_send(&sendjob);
+//     // Start job (sending automatically starts OTAA too)
+//     do_send(&sendjob);
 
-    Serial.println("Setup eind");
+//     Serial.println("Setup eind");
 }
 
 void loop()
 {
-    os_runloop_once();
+    // os_runloop_once();
+    float temperatuurWaarde = temperatuursensor.Meet();
+    delay(1000);
 }
