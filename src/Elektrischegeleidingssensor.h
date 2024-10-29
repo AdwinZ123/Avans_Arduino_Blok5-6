@@ -1,15 +1,20 @@
 #ifndef ELEKTRISCHEGELEIDINGSSENSOR_H
 #define ELEKTRISCHEGELEIDINGSSENSOR_H
 
-class Elektrischegeleidingssensor {
+#include <Arduino.h>
+#include "CQRobotTDS.h"
+
+class Elektrischegeleidingssensor
+{
 private:
-    int _pin;
-    
-  public:
-		Elektrischegeleidingssensor(int);
-		~Elektrischegeleidingssensor();
-		
-    float Meet(float temperatuur);
+  int _pin;
+  CQRobotTDS _tds;
+
+public:
+  Elektrischegeleidingssensor(int);
+  ~Elektrischegeleidingssensor();
+
+  float Meet(float temperatuur);
 };
 
 #endif
