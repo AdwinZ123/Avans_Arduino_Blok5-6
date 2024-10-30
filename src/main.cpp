@@ -247,6 +247,37 @@ void do_send(osjob_t *j)
         float zuurstofWaarde = zuurstofsensor.Meet(temperatuurWaarde); // meet();
         Serial.println(zuurstofWaarde);
 
+        // hier moet de payload worden opgebouwd
+        Serial.println();
+        Serial.println();
+        Serial.println("Nieuwe test");
+
+        String phPayload = String(phWaarde, HEX);
+        String troebelheidPayload = String(troebelheidWaarde, HEX);
+        String elektrischegeleidingsPayload = String(elektrischegeleidingsWaarde, HEX);
+        String zuurstofPayload = String(zuurstofWaarde, HEX);
+        String temperatuurPayload = String(temperatuurWaarde, HEX);
+
+        unsigned char byteArray[8] = {0x8C};
+
+        int temperaturePayloadRangeValue = 35 * 20;
+        // int temperaturePayloadRangeValue = temperatuurWaarde * 20;
+        String result = String(temperatuurWaarde);
+
+        while (result.length() < 4)
+        {
+            result = "0" + result;
+        }
+
+        String payloadByte2 = result.substring(0, 2);
+        String payloadByte3 = result.substring(2, 4);
+
+        Serial.println("_______________________");
+
+        Serial.println(payloadByte2 + " | " + payloadByte3);
+
+        Serial.println("_______________________");
+
         // Print the payload to the console
         Serial.print("Payload: ");
         for (size_t i = 0; i < sizeof(mydata) - 1; ++i)
@@ -270,27 +301,27 @@ void setup()
     Serial.begin(9600);
     Serial.println(F("Starting"));
 
-// #ifdef VCC_ENABLE
-//     // For Pinoccio Scout boards
-//     pinMode(VCC_ENABLE, OUTPUT);
-//     digitalWrite(VCC_ENABLE, HIGH);
-//     delay(1000);
-// #endif
+    #ifdef VCC_ENABLE
+        // For Pinoccio Scout boards
+        pinMode(VCC_ENABLE, OUTPUT);
+        digitalWrite(VCC_ENABLE, HIGH);
+        delay(1000);
+    #endif
 
-//     // LMIC init
-//     os_init();
-//     // Reset the MAC state. Session and pending data transfers will be discarded.
-//     LMIC_reset();
+        // LMIC init
+        os_init();
+        // Reset the MAC state. Session and pending data transfers will be discarded.
+        LMIC_reset();
 
-//     // Start job (sending automatically starts OTAA too)
-//     do_send(&sendjob);
+        // Start job (sending automatically starts OTAA too)
+        do_send(&sendjob);
 
-//     Serial.println("Setup eind");
+        Serial.println("Setup eind");
 }
 
 void loop()
 {
-    // os_runloop_once();
-    float temperatuurWaarde = temperatuursensor.Meet();
-    delay(1000);
+    os_runloop_once();
+    // float temperatuurWaarde = temperatuursensor.Meet();
+    // delay(1000);
 }
