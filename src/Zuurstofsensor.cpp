@@ -40,11 +40,10 @@ int16_t readDO(uint32_t voltage_mv, uint8_t temperature_c)
 
 int Zuurstofsensor::Meet(float temperatuur)
 {
-  int VREF = 5000;    // VREF (mv)
-  int ADC_RES = 1024; // ADC Resolution
-  int READ_TEMP = 25; // Current water temperature ℃, Or temperature sensor function
+  int VREF = 3300;    // 5000;  // VREF (mv)
+  int ADC_RES = 4096; // 1024;  // ADC Resolution
 
-  uint8_t Temperaturet = (uint8_t)READ_TEMP;
+  uint8_t Temperaturet = (uint8_t)temperatuur;
   uint16_t ADC_Raw = analogRead(_pin);
   uint16_t ADC_Voltage = (uint32_t)VREF * ADC_Raw / ADC_RES;
   uint16_t DO = readDO(ADC_Voltage, Temperaturet);

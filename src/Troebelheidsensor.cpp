@@ -12,13 +12,9 @@ Troebelheidsensor::~Troebelheidsensor() {}
 float Troebelheidsensor::Meet()
 {
   Serial.println("Troebelheidsensor");
-  int sensorValue = analogRead(_pin);                                        // read the input on analog pin 0:
-  double voltage = sensorValue * (5.0 / 1024.0);                             // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
-  double ntu = round(-1120.4 * pow(voltage, 2) + 5742.3 * voltage - 4353.8); // convert measured voltage to corresponding NTU value
-
-  // int sensorValue = analogRead(_pin);// read the input on analog pin 0:
-  // float voltage = sensorValue * (5.0 / 1024.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
-  //  Serial.println(voltage); // print out the value you read:
+  int sensorValue = analogRead(_pin);            // read the input on analog pin 0:
+  double voltage = sensorValue * (3.3 / 4096.0); // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
+  double ntu = 600 * voltage;                    // convert measured voltage to corresponding NTU value
 
   // Print de temperatuur naar de seriële monitor
   Serial.print("Troebelheid: ");
