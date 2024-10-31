@@ -44,8 +44,6 @@
 #include "EEPROM.h"
 
 #include <Wire.h>
-#include "SSD1306.h"
-#include "oled_display.h"
 
 #include "Elektrischegeleidingssensor.h"
 #include "Troebelheidsensor.h"
@@ -67,23 +65,14 @@ Temperatuursensor temperatuursensor(TEMPERATUURSENSORPIN);
 
 #define EEPROM_SIZE 128
 
-#define OLED_ADDR 0x3C
-#define OLED_SDA 4
-#define OLED_SCL 15
-
 TinyGPSPlus gps;
 HardwareSerial SerialGPS(1);
 
-SSD1306 display(OLED_ADDR, OLED_SDA, OLED_SCL);
-OledDisplay oledDisplay(&display);
-
 GpsDataState_t gpsState = {};
 
-#define TASK_OLED_RATE 200
 #define TASK_SERIAL_RATE 100
 
 uint32_t nextSerialTaskTs = 0;
-uint32_t nextOledTaskTs = 0;
 
 #define BUILDINLED 25
 
@@ -407,9 +396,6 @@ void setup()
 
     EEPROM_readAnything(8, readValue);
     gpsState.originAlt = (double)readValue / 1000000;
-
-    oledDisplay.init();
-    oledDisplay.page(OLED_PAGE_STATS);
 
     // Serial.begin(9600);
     Serial.println(F("Starting"));
