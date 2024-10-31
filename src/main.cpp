@@ -262,14 +262,17 @@ void do_send(osjob_t *j)
 
         int temperaturePayloadRangeValue = 35 * 20;
         // int temperaturePayloadRangeValue = temperatuurWaarde * 20;
-        String result = String(temperatuurWaarde);
+        String result = String(temperaturePayloadRangeValue);
 
         while (result.length() < 4)
         {
-            result = "0" + result;
+            result = "0" + result; 
+
         }
 
-        String payloadByte2 = result.substring(0, 2);
+        Serial.println("_______________________" + result);
+
+        String payloadByte2 = result.substring(1, 2);
         String payloadByte3 = result.substring(2, 4);
 
         Serial.println("_______________________");
