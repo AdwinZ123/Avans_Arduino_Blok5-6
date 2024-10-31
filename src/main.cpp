@@ -289,17 +289,11 @@ void do_send(osjob_t *j)
         String payloadByte2 = temperatureResult.substring(0, 2);
         String payloadByte3 = temperatureResult.substring(2, 4);
 
-        // temperature
-
         String payloadByte5 = egvResult.substring(0, 2);
         String payloadByte6 = egvResult.substring(2, 4);
 
-        // egv
-
         String payloadByte7 = turbidityResult.substring(0, 2);
         String payloadByte8 = turbidityResult.substring(2, 4);
-
-        // turbidity
 
         Serial.println("_______________________");
 
