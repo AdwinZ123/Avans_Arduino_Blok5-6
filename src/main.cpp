@@ -38,6 +38,13 @@
 
 #include "CQRobotTDS.h"
 
+#include "types.h"
+#include <TinyGPS++.h>
+#include <HardwareSerial.h>
+#include "EEPROM.h"
+
+#include <Wire.h>
+
 #include "Elektrischegeleidingssensor.h"
 #include "Troebelheidsensor.h"
 #include "Phsensor.h"
@@ -45,7 +52,7 @@
 #include "Temperatuursensor.h"
 
 #define TEMPERATUURSENSORPIN 13
-#define ZUURSTOFSENSORPIN 37
+#define ZUURSTOFSENSORPIN 12
 #define PHSENSORPIN 34
 #define TROEBELHEIDSENSORPIN 35
 #define ELEKTRISCHEGELEIDINGSSENSORPIN 36
@@ -55,6 +62,17 @@ Troebelheidsensor troebelheidsensor(TROEBELHEIDSENSORPIN);
 Phsensor phsensor(PHSENSORPIN);
 Zuurstofsensor zuurstofsensor(ZUURSTOFSENSORPIN);
 Temperatuursensor temperatuursensor(TEMPERATUURSENSORPIN);
+
+#define EEPROM_SIZE 128
+
+TinyGPSPlus gps;
+HardwareSerial SerialGPS(1);
+
+GpsDataState_t gpsState = {};
+
+#define TASK_SERIAL_RATE 100
+
+uint32_t nextSerialTaskTs = 0;
 
 #define BUILDINLED 25
 
@@ -82,7 +100,7 @@ void do_send(osjob_t *);
 
 // Schedule TX every this many seconds (might become longer due to duty
 // cycle limitations).
-const unsigned TX_INTERVAL = 20;
+const unsigned TX_INTERVAL = 10;
 
 // Pin mapping TTGO LoRa32 V1.0:
 const lmic_pinmap lmic_pins = {
@@ -190,6 +208,10 @@ void onEvent(ev_t ev)
     case EV_RXCOMPLETE:
         // data received in ping slot
         Serial.println(F("EV_RXCOMPLETE"));
+
+        // Zet de ingebouwde LED aan wanneer een bericht ontvangen is via de down-link
+        digitalWrite(BUILDINLED, HIGH);
+
         break;
     case EV_LINK_DEAD:
         Serial.println(F("EV_LINK_DEAD"));
@@ -225,10 +247,106 @@ void onEvent(ev_t ev)
     }
 }
 
+template <class T>
+int EEPROM_writeAnything(int ee, const T &value)
+{
+    const byte *p = (const byte *)(const void *)&value;
+    int i;
+    for (i = 0; i < sizeof(value); i++)
+        EEPROM.write(ee++, *p++);
+    return i;
+}
+
+template <class T>
+int EEPROM_readAnything(int ee, T &value)
+{
+    byte *p = (byte *)(void *)&value;
+    int i;
+    for (i = 0; i < sizeof(value); i++)
+        *p++ = EEPROM.read(ee++);
+    return i;
+}
+
+float *readGps()
+{
+    static int p0 = 0;
+
+    gpsState.originLat = gps.location.lat();
+    gpsState.originLon = gps.location.lng();
+    gpsState.originAlt = gps.altitude.meters();
+
+    long writeValue;
+    writeValue = gpsState.originLat * 1000000;
+    EEPROM_writeAnything(0, writeValue);
+    writeValue = gpsState.originLon * 1000000;
+    EEPROM_writeAnything(4, writeValue);
+    writeValue = gpsState.originAlt * 1000000;
+    EEPROM_writeAnything(8, writeValue);
+    EEPROM.commit();
+
+    gpsState.distMax = 0;
+    gpsState.altMax = -999999;
+    gpsState.spdMax = 0;
+    gpsState.altMin = 999999;
+
+    while (SerialGPS.available() > 0)
+    {
+        gps.encode(SerialGPS.read());
+    }
+
+    if (gps.satellites.value() > 4)
+    {
+        gpsState.dist = TinyGPSPlus::distanceBetween(gps.location.lat(), gps.location.lng(), gpsState.originLat, gpsState.originLon);
+
+        if (gpsState.dist > gpsState.distMax && abs(gpsState.prevDist - gpsState.dist) < 50)
+        {
+            gpsState.distMax = gpsState.dist;
+        }
+
+        gpsState.prevDist = gpsState.dist;
+
+        if (gps.altitude.meters() > gpsState.altMax)
+        {
+            gpsState.altMax = gps.altitude.meters();
+        }
+
+        if (gps.speed.mps() > gpsState.spdMax)
+        {
+            gpsState.spdMax = gps.speed.mps();
+        }
+
+        if (gps.altitude.meters() < gpsState.altMin)
+        {
+            gpsState.altMin = gps.altitude.meters();
+        }
+    }
+
+    if (nextSerialTaskTs < millis())
+    {
+
+        Serial.print("LAT=");
+        Serial.println(gps.location.lat(), 6);
+        Serial.print("LONG=");
+        Serial.println(gps.location.lng(), 6);
+        Serial.print("ALT=");
+        Serial.println(gps.altitude.meters());
+        Serial.print("Sats=");
+        Serial.println(gps.satellites.value());
+        Serial.print("DST: ");
+        Serial.println(gpsState.dist, 1);
+
+        nextSerialTaskTs = millis() + TASK_SERIAL_RATE;
+    }
+
+    static float arr[2];
+    arr[0] = gps.location.lat();
+    arr[1] = gps.location.lng();
+
+    return arr;
+}
+
 void do_send(osjob_t *j)
 {
-    Serial.println("do_send");
-
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND)
     {
@@ -236,16 +354,15 @@ void do_send(osjob_t *j)
     }
     else
     {
-        Serial.println();
-        Serial.println();
-        Serial.println("Nieuwe meting");
         // PUT HERE YOUR CODE TO READ THE SENSORS AND CONSTRUCT THE TTS PAYLOAD
         float temperatuurWaarde = temperatuursensor.Meet();
         float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet(temperatuurWaarde);
         float troebelheidWaarde = troebelheidsensor.Meet();
         float phWaarde = phsensor.Meet(temperatuurWaarde);
-        float zuurstofWaarde = zuurstofsensor.Meet(temperatuurWaarde); // meet();
-        Serial.println(zuurstofWaarde);
+        int zuurstofWaarde = zuurstofsensor.Meet(temperatuurWaarde);
+        float *gpsLocaties = readGps();
+        float gpsLocatieLat = gpsLocaties[0];
+        float gpsLocatieLng = gpsLocaties[1];
 
         // hier moet de payload worden opgebouwd
         Serial.println();
@@ -356,8 +473,28 @@ void do_send(osjob_t *j)
 
 void setup()
 {
-    Serial.println("Setup begin");
-    Serial.begin(9600);
+    Serial.begin(115200);
+    SerialGPS.begin(9600, SERIAL_8N1, 16, 17);
+
+    pinMode(BUILDINLED, OUTPUT);
+
+
+    while (!EEPROM.begin(EEPROM_SIZE))
+    {
+        true;
+    }
+
+    long readValue;
+    EEPROM_readAnything(0, readValue);
+    gpsState.originLat = (double)readValue / 1000000;
+
+    EEPROM_readAnything(4, readValue);
+    gpsState.originLon = (double)readValue / 1000000;
+
+    EEPROM_readAnything(8, readValue);
+    gpsState.originAlt = (double)readValue / 1000000;
+
+    // Serial.begin(9600);
     Serial.println(F("Starting"));
 
 #ifdef VCC_ENABLE
@@ -374,8 +511,6 @@ void setup()
 
     // Start job (sending automatically starts OTAA too)
     do_send(&sendjob);
-
-    Serial.println("Setup eind");
 }
 
 void loop()
