@@ -260,26 +260,88 @@ void do_send(osjob_t *j)
 
         unsigned char byteArray[8] = {0x8C};
 
-        int temperaturePayloadRangeValue = 35 * 20;
+        int pHPayloadRangeValue = phWaarde * 10;
+        int temperaturePayloadRangeValue = temperatuurWaarde * 20;
+        int oxygenPayloadRangeValue = zuurstofWaarde * 10;
         // int temperaturePayloadRangeValue = temperatuurWaarde * 20;
-        String result = String(temperaturePayloadRangeValue);
 
-        while (result.length() < 4)
+        String temperatureResult = String(temperaturePayloadRangeValue);
+        String egvResult = String(elektrischegeleidingsWaarde);
+        String turbidityResult = String(troebelheidWaarde);
+
+        while (temperatureResult.length() < 4)
         {
-            result = "0" + result; 
-
+            temperatureResult = "0" + temperatureResult;
         }
 
-        Serial.println("_______________________" + result);
+        while (egvResult.length() < 4)
+        {
+            egvResult = "0" + egvResult;
+        }
 
-        String payloadByte2 = result.substring(1, 2);
-        String payloadByte3 = result.substring(2, 4);
+        while (turbidityResult.length() < 4)
+        {
+            turbidityResult = "0" + turbidityResult;
+        }
+
+        Serial.println("_______________________" + temperatureResult);
+
+        String payloadByte2 = temperatureResult.substring(0, 2);
+        String payloadByte3 = temperatureResult.substring(2, 4);
+
+        // temperature
+
+        String payloadByte5 = egvResult.substring(0, 2);
+        String payloadByte6 = egvResult.substring(2, 4);
+
+        // egv
+
+        String payloadByte7 = turbidityResult.substring(0, 2);
+        String payloadByte8 = turbidityResult.substring(2, 4);
+
+        // turbidity
 
         Serial.println("_______________________");
 
         Serial.println(payloadByte2 + " | " + payloadByte3);
 
         Serial.println("_______________________");
+
+        String hexString = ""; // De resulterende string met hex-waarden
+        String payloadByte1String =  String("0x") + String(pHPayloadRangeValue, HEX);
+        String payloadByte2String = String("0x") + payloadByte2;
+        String payloadByte3String = String("0x") + payloadByte3;
+        String payloadByte4String = String("0x") + String("0x") + String(oxygenPayloadRangeValue, HEX);
+        String payloadByte5String = String("0x") + payloadByte5;
+        String payloadByte6String = String("0x") + payloadByte6;
+        String payloadByte7String = String("0x") + payloadByte7;
+        String payloadByte8String = String("0x") + payloadByte8;
+
+        String hexStrings[] =   {payloadByte1String,
+                                payloadByte2String,
+                                payloadByte3String,
+                                payloadByte4String,
+                                payloadByte5String,
+                                payloadByte6String,
+                                payloadByte7String,
+                                payloadByte8String};
+
+         for (int i = 0; i < sizeof(hexStrings); i++) {
+
+        mydata[i] = (uint8_t) strtol(hexStrings[i].c_str(), NULL, 16);
+
+    }   
+
+
+        for (int i = 2; i < 4; i++)
+        {
+            // Haal elk karakter op en zet het om naar een getal
+            int num = payloadByte2String.charAt(i) - '0';
+            // Zet het getal om naar een hexadecimale string en voeg toe aan hexString
+            hexString += String(num, HEX);
+        }
+
+        // TODO: Add the other values to the payload
 
         // Print the payload to the console
         Serial.print("Payload: ");
@@ -304,22 +366,22 @@ void setup()
     Serial.begin(9600);
     Serial.println(F("Starting"));
 
-    #ifdef VCC_ENABLE
-        // For Pinoccio Scout boards
-        pinMode(VCC_ENABLE, OUTPUT);
-        digitalWrite(VCC_ENABLE, HIGH);
-        delay(1000);
-    #endif
+#ifdef VCC_ENABLE
+    // For Pinoccio Scout boards
+    pinMode(VCC_ENABLE, OUTPUT);
+    digitalWrite(VCC_ENABLE, HIGH);
+    delay(1000);
+#endif
 
-        // LMIC init
-        os_init();
-        // Reset the MAC state. Session and pending data transfers will be discarded.
-        LMIC_reset();
+    // LMIC init
+    os_init();
+    // Reset the MAC state. Session and pending data transfers will be discarded.
+    LMIC_reset();
 
-        // Start job (sending automatically starts OTAA too)
-        do_send(&sendjob);
+    // Start job (sending automatically starts OTAA too)
+    do_send(&sendjob);
 
-        Serial.println("Setup eind");
+    Serial.println("Setup eind");
 }
 
 void loop()
