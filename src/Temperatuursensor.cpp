@@ -26,5 +26,21 @@ float Temperatuursensor::Meet()
   Serial.print(temperature);
   Serial.println();
 
+   unsigned char testByteArray[8] = {0x8C, 0x07, 0x00, 0x64, 0x0F, 0x00, 0x14, 0x00};
+
+    // Output the byte array
+    Serial.println("____________________________________");
+    Serial.println(testByteArray[0]);
+    Serial.println(testByteArray[1]);
+    Serial.println(testByteArray[2]);
+    Serial.println(testByteArray[3]);
+    Serial.println(testByteArray[4]);
+    Serial.println(testByteArray[5]);
+    Serial.println(testByteArray[6]);
+    Serial.println(testByteArray[7]);
+    Serial.println("____________________________________");
+
+
+
   return temperature;
 }

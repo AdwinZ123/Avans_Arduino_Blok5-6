@@ -364,6 +364,96 @@ void do_send(osjob_t *j)
         float gpsLocatieLat = gpsLocaties[0];
         float gpsLocatieLng = gpsLocaties[1];
 
+        // hier moet de payload worden opgebouwd
+        Serial.println();
+        Serial.println();
+        Serial.println("Nieuwe test");
+
+        String phPayload = String(phWaarde, HEX);
+        String troebelheidPayload = String(troebelheidWaarde, HEX);
+        String elektrischegeleidingsPayload = String(elektrischegeleidingsWaarde, HEX);
+        String zuurstofPayload = String(zuurstofWaarde, HEX);
+        String temperatuurPayload = String(temperatuurWaarde, HEX);
+
+        unsigned char byteArray[8] = {0x8C};
+
+        int pHPayloadRangeValue = phWaarde * 10;
+        int temperaturePayloadRangeValue = temperatuurWaarde * 20;
+        int oxygenPayloadRangeValue = zuurstofWaarde * 10;
+        // int temperaturePayloadRangeValue = temperatuurWaarde * 20;
+
+        String temperatureResult = String(temperaturePayloadRangeValue);
+        String egvResult = String(elektrischegeleidingsWaarde);
+        String turbidityResult = String(troebelheidWaarde);
+
+        while (temperatureResult.length() < 4)
+        {
+            temperatureResult = "0" + temperatureResult;
+        }
+
+        while (egvResult.length() < 4)
+        {
+            egvResult = "0" + egvResult;
+        }
+
+        while (turbidityResult.length() < 4)
+        {
+            turbidityResult = "0" + turbidityResult;
+        }
+
+        Serial.println("_______________________" + temperatureResult);
+
+        String payloadByte2 = temperatureResult.substring(0, 2);
+        String payloadByte3 = temperatureResult.substring(2, 4);
+
+        String payloadByte5 = egvResult.substring(0, 2);
+        String payloadByte6 = egvResult.substring(2, 4);
+
+        String payloadByte7 = turbidityResult.substring(0, 2);
+        String payloadByte8 = turbidityResult.substring(2, 4);
+
+        Serial.println("_______________________");
+
+        Serial.println(payloadByte2 + " | " + payloadByte3);
+
+        Serial.println("_______________________");
+
+        String hexString = ""; // De resulterende string met hex-waarden
+        String payloadByte1String =  String("0x") + String(pHPayloadRangeValue, HEX);
+        String payloadByte2String = String("0x") + payloadByte2;
+        String payloadByte3String = String("0x") + payloadByte3;
+        String payloadByte4String = String("0x") + String("0x") + String(oxygenPayloadRangeValue, HEX);
+        String payloadByte5String = String("0x") + payloadByte5;
+        String payloadByte6String = String("0x") + payloadByte6;
+        String payloadByte7String = String("0x") + payloadByte7;
+        String payloadByte8String = String("0x") + payloadByte8;
+
+        String hexStrings[] =   {payloadByte1String,
+                                payloadByte2String,
+                                payloadByte3String,
+                                payloadByte4String,
+                                payloadByte5String,
+                                payloadByte6String,
+                                payloadByte7String,
+                                payloadByte8String};
+
+         for (int i = 0; i < sizeof(hexStrings); i++) {
+
+        mydata[i] = (uint8_t) strtol(hexStrings[i].c_str(), NULL, 16);
+
+    }   
+
+
+        for (int i = 2; i < 4; i++)
+        {
+            // Haal elk karakter op en zet het om naar een getal
+            int num = payloadByte2String.charAt(i) - '0';
+            // Zet het getal om naar een hexadecimale string en voeg toe aan hexString
+            hexString += String(num, HEX);
+        }
+
+        // TODO: Add the other values to the payload
+
         // Print the payload to the console
         Serial.print("Payload: ");
         for (size_t i = 0; i < sizeof(mydata) - 1; ++i)
@@ -387,6 +477,7 @@ void setup()
     SerialGPS.begin(9600, SERIAL_8N1, 16, 17);
 
     pinMode(BUILDINLED, OUTPUT);
+
 
     while (!EEPROM.begin(EEPROM_SIZE))
     {
@@ -425,4 +516,6 @@ void setup()
 void loop()
 {
     os_runloop_once();
+    // float temperatuurWaarde = temperatuursensor.Meet();
+    // delay(1000);
 }
