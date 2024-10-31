@@ -208,6 +208,10 @@ void onEvent(ev_t ev)
     case EV_RXCOMPLETE:
         // data received in ping slot
         Serial.println(F("EV_RXCOMPLETE"));
+
+        // Zet de ingebouwde LED aan wanneer een bericht ontvangen is via de down-link
+        digitalWrite(BUILDINLED, HIGH);
+
         break;
     case EV_LINK_DEAD:
         Serial.println(F("EV_LINK_DEAD"));
@@ -381,6 +385,8 @@ void setup()
 {
     Serial.begin(115200);
     SerialGPS.begin(9600, SERIAL_8N1, 16, 17);
+
+    pinMode(BUILDINLED, OUTPUT);
 
     while (!EEPROM.begin(EEPROM_SIZE))
     {
