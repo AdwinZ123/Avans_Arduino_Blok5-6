@@ -448,6 +448,4 @@ void setup()
 void loop()
 {
     os_runloop_once();
-    // float temperatuurWaarde = temperatuursensor.Meet();
-    // delay(1000);
 }
