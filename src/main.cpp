@@ -93,7 +93,6 @@ void os_getDevEui(u1_t *buf) { memcpy_P(buf, DEVEUI, 8); }
 static const u1_t PROGMEM APPKEY[16] = {0xFB, 0xDA, 0x08, 0x0F, 0x51, 0xDE, 0xC4, 0xEB, 0x2B, 0x7B, 0x71, 0xB1, 0x54, 0x64, 0xE7, 0x58};
 void os_getDevKey(u1_t *buf) { memcpy_P(buf, APPKEY, 16); }
 
-static uint8_t mydata[] = "Hello, world!";
 static osjob_t sendjob;
 
 void do_send(osjob_t *);
@@ -345,6 +344,22 @@ float *readGps()
     return arr;
 }
 
+void encodeCoordinates(double latitude, double longitude, uint8_t *gpsPayload)
+{
+    // Encode latitude
+    int32_t latEncoded = static_cast<int32_t>(latitude * 1e7);
+    int32_t lonEncoded = static_cast<int32_t>(longitude * 1e7);
+
+    for (int i = 0; i < 4; ++i)
+    {
+        gpsPayload[i] = (latEncoded >> (24 - i * 8)) & 0xFF;
+    }
+
+    for (int i = 0; i < 4; ++i)
+    {
+        gpsPayload[i + 4] = (lonEncoded >> (24 - i * 8)) & 0xFF;
+    }
+}
 void do_send(osjob_t *j)
 {
     // Check if there is not a current TX/RX job running
@@ -354,7 +369,7 @@ void do_send(osjob_t *j)
     }
     else
     {
-        // PUT HERE YOUR CODE TO READ THE SENSORS AND CONSTRUCT THE TTS PAYLOAD
+        // Lees sensorwaarden
         float temperatuurWaarde = temperatuursensor.Meet();
         float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet(temperatuurWaarde);
         float troebelheidWaarde = troebelheidsensor.Meet();
@@ -364,120 +379,58 @@ void do_send(osjob_t *j)
         float gpsLocatieLat = gpsLocaties[0];
         float gpsLocatieLng = gpsLocaties[1];
 
-        // hier moet de payload worden opgebouwd
-        Serial.println();
-        Serial.println();
-        Serial.println("Nieuwe test");
+        // Maak een payload-array met voldoende ruimte voor elke waarde
+        uint8_t fullPayload[16]; // Pas aan afhankelijk van hoeveel bytes je nodig hebt
 
-        String phPayload = String(phWaarde, HEX);
-        String troebelheidPayload = String(troebelheidWaarde, HEX);
-        String elektrischegeleidingsPayload = String(elektrischegeleidingsWaarde, HEX);
-        String zuurstofPayload = String(zuurstofWaarde, HEX);
-        String temperatuurPayload = String(temperatuurWaarde, HEX);
+        // pH-waarde (1 byte, geschaald met factor 10 om 1 decimaal te behouden)
+        fullPayload[0] = (uint8_t)(phWaarde * 10);
 
-        unsigned char byteArray[8] = {0x8C};
+        // Temperatuur (1 byte, geschaald met factor 10)
+        int16_t tempEncoded = (int16_t)(temperatuurWaarde * 10);
+        fullPayload[1] = tempEncoded & 0xFF;
 
-        int pHPayloadRangeValue = phWaarde * 10;
-        int temperaturePayloadRangeValue = temperatuurWaarde * 20;
-        int oxygenPayloadRangeValue = zuurstofWaarde * 10;
-        // int temperaturePayloadRangeValue = temperatuurWaarde * 20;
+        // Elektrische Geleidbaarheid (2 bytes, geschaald)
+        uint16_t egvEncoded = (uint16_t)elektrischegeleidingsWaarde;
+        fullPayload[2] = (egvEncoded >> 8) & 0xFF;
+        fullPayload[3] = egvEncoded & 0xFF;
 
-        String temperatureResult = String(temperaturePayloadRangeValue);
-        String egvResult = String(elektrischegeleidingsWaarde);
-        String turbidityResult = String(troebelheidWaarde);
+        // Troebelheid (2 bytes, geschaald)
+        uint16_t turbidityEncoded = (uint16_t)troebelheidWaarde;
+        fullPayload[4] = (turbidityEncoded >> 8) & 0xFF;
+        fullPayload[5] = turbidityEncoded & 0xFF;
 
-        while (temperatureResult.length() < 4)
+        // Zuurstofwaarde (1 byte, geschaald met factor 10)
+        fullPayload[6] = (uint8_t)(zuurstofWaarde * 10);
+
+        // GPS-coördinaten (4 bytes per waarde, geschaald met factor 1e7)
+        int32_t latEncoded = (int32_t)(gpsLocatieLat * 1e7);
+        int32_t lngEncoded = (int32_t)(gpsLocatieLng * 1e7);
+        for (int i = 0; i < 4; i++)
         {
-            temperatureResult = "0" + temperatureResult;
+            fullPayload[7 + i] = (latEncoded >> (24 - i * 8)) & 0xFF;
+            fullPayload[11 + i] = (lngEncoded >> (24 - i * 8)) & 0xFF;
         }
 
-        while (egvResult.length() < 4)
+        // Print de payload om te controleren
+        Serial.print("Full Payload: ");
+        for (size_t i = 0; i < sizeof(fullPayload); ++i)
         {
-            egvResult = "0" + egvResult;
-        }
-
-        while (turbidityResult.length() < 4)
-        {
-            turbidityResult = "0" + turbidityResult;
-        }
-
-        Serial.println("_______________________" + temperatureResult);
-
-        String payloadByte2 = temperatureResult.substring(0, 2);
-        String payloadByte3 = temperatureResult.substring(2, 4);
-
-        String payloadByte5 = egvResult.substring(0, 2);
-        String payloadByte6 = egvResult.substring(2, 4);
-
-        String payloadByte7 = turbidityResult.substring(0, 2);
-        String payloadByte8 = turbidityResult.substring(2, 4);
-
-        Serial.println("_______________________");
-
-        Serial.println(payloadByte2 + " | " + payloadByte3);
-
-        Serial.println("_______________________");
-
-        String hexString = ""; // De resulterende string met hex-waarden
-        String payloadByte1String =  String("0x") + String(pHPayloadRangeValue, HEX);
-        String payloadByte2String = String("0x") + payloadByte2;
-        String payloadByte3String = String("0x") + payloadByte3;
-        String payloadByte4String = String("0x") + String("0x") + String(oxygenPayloadRangeValue, HEX);
-        String payloadByte5String = String("0x") + payloadByte5;
-        String payloadByte6String = String("0x") + payloadByte6;
-        String payloadByte7String = String("0x") + payloadByte7;
-        String payloadByte8String = String("0x") + payloadByte8;
-
-        String hexStrings[] =   {payloadByte1String,
-                                payloadByte2String,
-                                payloadByte3String,
-                                payloadByte4String,
-                                payloadByte5String,
-                                payloadByte6String,
-                                payloadByte7String,
-                                payloadByte8String};
-
-         for (int i = 0; i < sizeof(hexStrings); i++) {
-
-        mydata[i] = (uint8_t) strtol(hexStrings[i].c_str(), NULL, 16);
-
-    }   
-
-
-        for (int i = 2; i < 4; i++)
-        {
-            // Haal elk karakter op en zet het om naar een getal
-            int num = payloadByte2String.charAt(i) - '0';
-            // Zet het getal om naar een hexadecimale string en voeg toe aan hexString
-            hexString += String(num, HEX);
-        }
-
-        // TODO: Add the other values to the payload
-
-        // Print the payload to the console
-        Serial.print("Payload: ");
-        for (size_t i = 0; i < sizeof(mydata) - 1; ++i)
-        {
-            if (i != 0)
-                Serial.print("-");
-            printHex2(mydata[i]);
+            Serial.print(fullPayload[i], HEX);
+            Serial.print(" ");
         }
         Serial.println();
 
-        // Prepare upstream data transmission at the next possible time.
-        LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
+        // Verzend de payload
+        LMIC_setTxData2(1, fullPayload, sizeof(fullPayload), 0);
         Serial.println(F("Packet queued"));
     }
-    // Next TX is scheduled after TX_COMPLETE event.
 }
-
 void setup()
 {
     Serial.begin(115200);
     SerialGPS.begin(9600, SERIAL_8N1, 16, 17);
 
     pinMode(BUILDINLED, OUTPUT);
-
 
     while (!EEPROM.begin(EEPROM_SIZE))
     {
@@ -516,6 +469,4 @@ void setup()
 void loop()
 {
     os_runloop_once();
-    // float temperatuurWaarde = temperatuursensor.Meet();
-    // delay(1000);
 }
