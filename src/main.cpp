@@ -344,24 +344,31 @@ float *readGps()
     return arr;
 }
 
-void encodeCoordinates(double latitude, double longitude, uint8_t* gpsPayload) {
+void encodeCoordinates(double latitude, double longitude, uint8_t *gpsPayload)
+{
     // Encode latitude
     int32_t latEncoded = static_cast<int32_t>(latitude * 1e7);
     int32_t lonEncoded = static_cast<int32_t>(longitude * 1e7);
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i)
+    {
         gpsPayload[i] = (latEncoded >> (24 - i * 8)) & 0xFF;
     }
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i)
+    {
         gpsPayload[i + 4] = (lonEncoded >> (24 - i * 8)) & 0xFF;
     }
 }
-void do_send(osjob_t *j) {
+void do_send(osjob_t *j)
+{
     // Check if there is not a current TX/RX job running
-    if (LMIC.opmode & OP_TXRXPEND) {
+    if (LMIC.opmode & OP_TXRXPEND)
+    {
         Serial.println(F("OP_TXRXPEND, not sending"));
-    } else {
+    }
+    else
+    {
         // Lees sensorwaarden
         float temperatuurWaarde = temperatuursensor.Meet();
         float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet(temperatuurWaarde);
@@ -398,14 +405,16 @@ void do_send(osjob_t *j) {
         // GPS-coördinaten (4 bytes per waarde, geschaald met factor 1e7)
         int32_t latEncoded = (int32_t)(gpsLocatieLat * 1e7);
         int32_t lngEncoded = (int32_t)(gpsLocatieLng * 1e7);
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++)
+        {
             fullPayload[7 + i] = (latEncoded >> (24 - i * 8)) & 0xFF;
             fullPayload[11 + i] = (lngEncoded >> (24 - i * 8)) & 0xFF;
         }
 
         // Print de payload om te controleren
         Serial.print("Full Payload: ");
-        for (size_t i = 0; i < sizeof(fullPayload); ++i) {
+        for (size_t i = 0; i < sizeof(fullPayload); ++i)
+        {
             Serial.print(fullPayload[i], HEX);
             Serial.print(" ");
         }
@@ -416,7 +425,6 @@ void do_send(osjob_t *j) {
         Serial.println(F("Packet queued"));
     }
 }
-
 void setup()
 {
     Serial.begin(115200);
