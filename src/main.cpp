@@ -344,16 +344,25 @@ float *readGps()
     return arr;
 }
 
-void do_send(osjob_t *j)
-{
-    // Check if there is not a current TX/RX job running
-    if (LMIC.opmode & OP_TXRXPEND)
-    {
-        Serial.println(F("OP_TXRXPEND, not sending"));
+void encodeCoordinates(double latitude, double longitude, uint8_t* gpsPayload) {
+    // Encode latitude
+    int32_t latEncoded = static_cast<int32_t>(latitude * 1e7);
+    int32_t lonEncoded = static_cast<int32_t>(longitude * 1e7);
+
+    for (int i = 0; i < 4; ++i) {
+        gpsPayload[i] = (latEncoded >> (24 - i * 8)) & 0xFF;
     }
-    else
-    {
-        // PUT HERE YOUR CODE TO READ THE SENSORS AND CONSTRUCT THE TTS PAYLOAD
+
+    for (int i = 0; i < 4; ++i) {
+        gpsPayload[i + 4] = (lonEncoded >> (24 - i * 8)) & 0xFF;
+    }
+}
+void do_send(osjob_t *j) {
+    // Check if there is not a current TX/RX job running
+    if (LMIC.opmode & OP_TXRXPEND) {
+        Serial.println(F("OP_TXRXPEND, not sending"));
+    } else {
+        // Lees sensorwaarden
         float temperatuurWaarde = temperatuursensor.Meet();
         float elektrischegeleidingsWaarde = elektrischegeleidingssensor.Meet(temperatuurWaarde);
         float troebelheidWaarde = troebelheidsensor.Meet();
@@ -363,45 +372,49 @@ void do_send(osjob_t *j)
         float gpsLocatieLat = gpsLocaties[0];
         float gpsLocatieLng = gpsLocaties[1];
 
-        // Payload constructie
-        uint32_t payload[6];
-        payload[0] = (uint32_t)(phWaarde * 10);
-        payload[1] = 0;
+        // Maak een payload-array met voldoende ruimte voor elke waarde
+        uint8_t fullPayload[16]; // Pas aan afhankelijk van hoeveel bytes je nodig hebt
 
-        if (temperatuurWaarde < 0)
-        {
-            temperatuurWaarde *= -1;
-            payload[1] = 0x01 << 7;
+        // pH-waarde (1 byte, geschaald met factor 10 om 1 decimaal te behouden)
+        fullPayload[0] = (uint8_t)(phWaarde * 10);
+
+        // Temperatuur (1 byte, geschaald met factor 10)
+        int16_t tempEncoded = (int16_t)(temperatuurWaarde * 10);
+        fullPayload[1] = tempEncoded & 0xFF;
+
+        // Elektrische Geleidbaarheid (2 bytes, geschaald)
+        uint16_t egvEncoded = (uint16_t)elektrischegeleidingsWaarde;
+        fullPayload[2] = (egvEncoded >> 8) & 0xFF;
+        fullPayload[3] = egvEncoded & 0xFF;
+
+        // Troebelheid (2 bytes, geschaald)
+        uint16_t turbidityEncoded = (uint16_t)troebelheidWaarde;
+        fullPayload[4] = (turbidityEncoded >> 8) & 0xFF;
+        fullPayload[5] = turbidityEncoded & 0xFF;
+
+        // Zuurstofwaarde (1 byte, geschaald met factor 10)
+        fullPayload[6] = (uint8_t)(zuurstofWaarde * 10);
+
+        // GPS-coördinaten (4 bytes per waarde, geschaald met factor 1e7)
+        int32_t latEncoded = (int32_t)(gpsLocatieLat * 1e7);
+        int32_t lngEncoded = (int32_t)(gpsLocatieLng * 1e7);
+        for (int i = 0; i < 4; i++) {
+            fullPayload[7 + i] = (latEncoded >> (24 - i * 8)) & 0xFF;
+            fullPayload[11 + i] = (lngEncoded >> (24 - i * 8)) & 0xFF;
         }
 
-        uint32_t tTemp = (uint32_t)(temperatuurWaarde * 10);
-        payload[1] |= (tTemp >> 2);
-        payload[2] = (tTemp << 7);
-
-        uint32_t tEGC = (uint32_t)elektrischegeleidingsWaarde;
-        payload[2] |= (tEGC >> 5);
-        payload[3] = (tEGC << 3);
-
-        uint32_t tTroeb = (uint32_t)troebelheidWaarde;
-        payload[3] |= (tTroeb >> 8);
-        payload[4] = tTroeb;
-        payload[5] = (uint32_t)(zuurstofWaarde * 10);
-
         // Print de payload om te controleren
-        Serial.print("Payload: ");
-        for (size_t i = 0; i < 6; ++i)
-        {
-            Serial.print(payload[i]);
-            if (i < 5)
-                Serial.print(" - ");
+        Serial.print("Full Payload: ");
+        for (size_t i = 0; i < sizeof(fullPayload); ++i) {
+            Serial.print(fullPayload[i], HEX);
+            Serial.print(" ");
         }
         Serial.println();
 
-        // Prepare upstream data transmission at the next possible time.
-        LMIC_setTxData2(1, (uint8_t *)payload, sizeof(payload), 0);
+        // Verzend de payload
+        LMIC_setTxData2(1, fullPayload, sizeof(fullPayload), 0);
         Serial.println(F("Packet queued"));
     }
-    // Next TX is scheduled after TX_COMPLETE event.
 }
 
 void setup()
