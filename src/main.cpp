@@ -51,11 +51,11 @@
 #include "Zuurstofsensor.h"
 #include "Temperatuursensor.h"
 
-#define TEMPERATUURSENSORPIN 13
-#define ZUURSTOFSENSORPIN 12
-#define PHSENSORPIN 34
-#define TROEBELHEIDSENSORPIN 35
-#define ELEKTRISCHEGELEIDINGSSENSORPIN 36
+#define TEMPERATUURSENSORPIN 13 // Nummer: 17 van rechts
+#define ZUURSTOFSENSORPIN 12 // Nummer: 16 van rechts
+#define PHSENSORPIN 34 // Nummer: 8 van rechts
+#define TROEBELHEIDSENSORPIN 35 // Nummer 9 van rechts
+#define ELEKTRISCHEGELEIDINGSSENSORPIN 36 // Nummer 4 van rechts
 
 Elektrischegeleidingssensor elektrischegeleidingssensor(ELEKTRISCHEGELEIDINGSSENSORPIN);
 Troebelheidsensor troebelheidsensor(TROEBELHEIDSENSORPIN);
